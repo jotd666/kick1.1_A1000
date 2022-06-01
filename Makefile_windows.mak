@@ -7,7 +7,7 @@ EXE = kick11_A1000.rom
 #EXE = new_object
 
 all :  $(EXE)
-ASMEXE = vasmm68k_mot -no-opt -nosym -kick1hunks -maxerrors=0 -I$(HDBASE)/amiga39_JFF_OS/include -I$(WHDBASE)\WHDLoad\Include -I$(WHDBASE)  -nosym -Fhunkexe
+ASMEXE = vasmm68k_mot -no-opt -nosym  -maxerrors=0 -I$(HDBASE)/amiga39_JFF_OS/include -I$(WHDBASE)\WHDLoad\Include -I$(WHDBASE)  -nosym -Fhunkexe
 ASMBIN = vasmm68k_mot -no-opt -nosym -maxerrors=0 -I$(HDBASE)/amiga39_JFF_OS/include -nosym -Fbin
 # we need to make sure that nothing is shifted
 # so we create a 100% identical object
@@ -16,7 +16,7 @@ ASMBIN = vasmm68k_mot -no-opt -nosym -maxerrors=0 -I$(HDBASE)/amiga39_JFF_OS/inc
 $(EXE) : kick11_A1000.s
 	$(ASMBIN) -o $(EXE) kick11_A1000.s
 	fc $(EXE) kick11_A1000_ref.rom	
-	
+	$(ASMEXE) -DREAL_EXE -o kick11_A1000_hunk kick11_A1000.s
 #$(ASMEXE) -DWA -o $(EXE) object.s
 
 
