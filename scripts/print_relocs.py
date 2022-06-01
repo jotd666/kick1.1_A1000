@@ -48,12 +48,14 @@ def decode(input_file,binary_file):
                 value = struct.unpack_from(">I",data,offset)[0]
                 if (0xFC0000 < value < 0xFF0000) and (value & 0xFF):
                     possible_reloc_values[value].append(offset)
-            fake_relocs = {0xfffff4,0xfe3002}
+            fake_relocs = {0xfffff4,0xfe3002,0xfd001f,0xfe2241,0xfe001f,0xfc001f,0x0fc4e95,0xfc49ec,0xfe0007,0xfe001e,
+            0xfc222a,0xfc286a,0xfc2f0a,0xfc2f39,0xfc3d6a,0xfc3d6e,0xfc41ea,0xfc41f9,0xfc42a9,0xfc486e,0xfc4e75,0xfe722a,
+            0xfcb2a9,0xfccf88,0xfe0053,0xfe0008,0xfe00bf,0xfe226e,0xfe2640,0xfe70ea}
             missed_relocs = set(possible_reloc_values).difference(reloc_values)
             for mo in sorted(missed_relocs-fake_relocs):
-                print("{:x} (offsets {})".format(mo,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values[mo])))
+                print("0x{:x} (offsets 0{})".format(mo,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values[mo])))
             print("Possible reloc offsets: {}, reloc_offsets: {}, missed_relocs: {}".format(len(possible_reloc_values),
-            len(reloc_values),len(missed_relocs)))
+            len(reloc_values),len(missed_relocs-fake_relocs)))
 
 decode(r"../kick11_A1000_hunk",r"../kick11_A1000.rom")
 

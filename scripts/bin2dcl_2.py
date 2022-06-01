@@ -4,8 +4,8 @@ with open("../kick11_A1000_ref.rom","rb") as f:
 
 #0x0fc0674,0x0fc0730
 
-start = int("0fe6bfe",16)
-end = int("0fe6ca2",16)
+start = int("0fed2a4",16)
+end = int("0fed2b8",16)
 while start < end:
     i = start - 0xfc0000
     data = struct.unpack_from(">H",contents,i)[0]
