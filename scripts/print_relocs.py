@@ -43,19 +43,35 @@ def decode(input_file,binary_file):
             data = f.read()
             reloc_values = {struct.unpack_from(">I",data,i)[0] for i in reloc_offsets}
 
+            possible_reloc_values_bcpl = collections.defaultdict(list)
             possible_reloc_values = collections.defaultdict(list)
             for offset in range(0,len(data)-4,2):
                 value = struct.unpack_from(">I",data,offset)[0]
-                if (0xFC0000 < value < 0xFF0000) and (value & 0xFF):
+                if (0xFC0000 < value < 0xFFFFF0) and (value & 0xFF):
                     possible_reloc_values[value].append(offset)
-            fake_relocs = {0xfffff4,0xfe3002,0xfd001f,0xfe2241,0xfe001f,0xfc001f,0x0fc4e95,0xfc49ec,0xfe0007,0xfe001e,
-            0xfc222a,0xfc286a,0xfc2f0a,0xfc2f39,0xfc3d6a,0xfc3d6e,0xfc41ea,0xfc41f9,0xfc42a9,0xfc486e,0xfc4e75,0xfe722a,
-            0xfcb2a9,0xfccf88,0xfe0053,0xfe0008,0xfe00bf,0xfe226e,0xfe2640,0xfe70ea}
+                else:
+                    value *= 4
+                    if (0xFF0000 < value < 0xFFF000) and (value & 0xFF):
+                        possible_reloc_values_bcpl[value].append(offset)
+
+            fake_relocs = {0xff0001,0xff0004,0xff0082,0xff00bf,0xff0006,0xff0014,0xff0008,0xff0018,0xff6f0e,
+            0xff0040,0xff000e,0xff0019,0xff001f,0xff01ff,0xff007f,0xff0050,0xff0009,0xff0058,0xff6706,0xff720a,
+            0xfffff4,0xfe3002,0xfd001f,0xfe2241,0xff3604,0xff508f,0xff5343,0xff6602,0xff6624,0xff6704,0xff7608,
+                    0xfe001f,0xfc001f,0x0fc4e95,0xfc49ec,0xfe0007,0xfe001e,0xff2342,0xff2f02,0xff4878,0xff4e75,
+            0xfc222a,0xfc286a,0xfc2f0a,0xfc2f39,0xfc3d6a,0xfc3d6e,0xfc41ea,0xfc41f9,0xfc42a9,0xfc486e,0xfc4e75,
+            0xfe722a,0xff528b,
+            0xfcb2a9,0xfccf88,0xfe0053,0xfe0008,0xff0348,0xff0349,0xfe00bf,0xfe226e,0xfe2640,0xff2243,0xff2341,
+            0xfe70ea,0xff0c43,0xff0fff,0xff8483,0xffb280,0xffc8b0}
             missed_relocs = set(possible_reloc_values).difference(reloc_values)
             for mo in sorted(missed_relocs-fake_relocs):
                 print("0x{:x} (offsets 0{})".format(mo,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values[mo])))
             print("Possible reloc offsets: {}, reloc_offsets: {}, missed_relocs: {}".format(len(possible_reloc_values),
             len(reloc_values),len(missed_relocs-fake_relocs)))
 
+##            for mo in sorted(possible_reloc_values_bcpl):
+##                print("0x{:x} BCPL 0x{:x} (offsets 0{})".format(mo,mo//4,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values_bcpl[mo])))
+            print("BCPL reloc offsets: {}".format(len(possible_reloc_values_bcpl)))
+
 decode(r"../kick11_A1000_hunk",r"../kick11_A1000.rom")
 
+#decode(r"../kick11_A1000_hunk",r"../kick33192.rom")
