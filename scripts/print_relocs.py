@@ -1,4 +1,4 @@
-import struct,collections
+import struct,collections,itertools
 
 hunk_dict = {0x3F3:"header",0x3E9:"code",0x3EA:"data",0x3F2:"end",0x3EC:"reloc32",0x3EB:"bss",0x3F1:"debug"}
 def read_long(f):
@@ -63,15 +63,52 @@ def decode(input_file,binary_file):
             0xfcb2a9,0xfccf88,0xfe0053,0xfe0008,0xff0348,0xff0349,0xfe00bf,0xfe226e,0xfe2640,0xff2243,0xff2341,
             0xfe70ea,0xff0c43,0xff0fff,0xff8483,0xffb280,0xffc8b0}
             missed_relocs = set(possible_reloc_values).difference(reloc_values)
-            for mo in sorted(missed_relocs-fake_relocs):
-                print("0x{:x} (offsets 0{})".format(mo,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values[mo])))
+            nb_missing = len(missed_relocs-fake_relocs)
+            if nb_missing:
+                for mo in sorted(missed_relocs-fake_relocs):
+                    print("0x{:x} (offsets 0{})".format(mo,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values[mo])))
             print("Possible reloc offsets: {}, reloc_offsets: {}, missed_relocs: {}".format(len(possible_reloc_values),
-            len(reloc_values),len(missed_relocs-fake_relocs)))
+            len(reloc_values),nb_missing))
 
-##            for mo in sorted(possible_reloc_values_bcpl):
-##                print("0x{:x} BCPL 0x{:x} (offsets 0{})".format(mo,mo//4,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values_bcpl[mo])))
+
+            for mo in sorted(possible_reloc_values_bcpl):
+                 print("0x{:x} BCPL 0x{:x} (offsets 0{})".format(mo,mo//4,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values_bcpl[mo])))
+                 if any(x < 0x30000 for x in possible_reloc_values_bcpl[mo]):
+                    possible_reloc_values_bcpl.pop(mo)
+
             print("BCPL reloc offsets: {}".format(len(possible_reloc_values_bcpl)))
 
-decode(r"../kick11_A1000_hunk",r"../kick11_A1000.rom")
+            if not nb_missing:
+                rtb_data = [0xde,0xad,0xc0,0xde,0,0,0]  # wrong checksum
+                previous = 0
+                for offset in sorted(itertools.chain.from_iterable(possible_reloc_values.values())):
+                    delta = offset-previous
+                    # encode
+                    if delta < 0x100:
+                        rtb_data.append(delta)
+                    elif delta < 0x10000:
+                        rtb_data.append(0)
+                        if len(rtb_data)%2:
+                            rtb_data.append(0)
+                        rtb_data.append(delta>>8)
+                        rtb_data.append(delta & 0xFF)
+                    else:
+                        #not happening
+                        raise Exception("Distance too long {:x}, prev {:x}".format(offset,previous))
+
+                    previous = offset
+                rtb_data.extend([0]*4)
+                if len(rtb_data)%2:
+                    rtb_data.append(0)
+                rtb_data.extend([0xff]*4)
+                for offset in sorted(itertools.chain.from_iterable(possible_reloc_values_bcpl.values())):
+                    rtb_data.extend(struct.pack(">I",offset))
+                rtb_data.extend([0]*8)
+
+            print("saving .RTB file, {} bytes".format(len(rtb_data)))
+            with open(binary_file+".RTB","wb") as f:
+                f.write(bytearray(rtb_data))
+
+decode(r"../kick11_A1000_hunk",r"../kick31340.A1000")
 
 #decode(r"../kick11_A1000_hunk",r"../kick33192.rom")

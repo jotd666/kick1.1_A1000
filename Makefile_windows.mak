@@ -3,8 +3,7 @@
 
 HDBASE = K:\jff\AmigaHD
 WHDBASE = $(HDBASE)\PROJETS\HDInstall\DONE
-EXE = kick11_A1000.rom
-#EXE = new_object
+EXE = kick31340.A1000
 
 all :  $(EXE)
 ASMEXE = vasmm68k_mot -no-opt -nosym  -maxerrors=0 -I$(HDBASE)/amiga39_JFF_OS/include -I$(WHDBASE)\WHDLoad\Include -I$(WHDBASE)  -nosym -Fhunkexe
@@ -13,10 +12,10 @@ ASMBIN = vasmm68k_mot -no-opt -nosym -maxerrors=0 -I$(HDBASE)/amiga39_JFF_OS/inc
 # so we create a 100% identical object
 # we test it against original object file
 # now if all is OK build the actual executable
-$(EXE) : kick11_A1000.s
-	$(ASMBIN) -o $(EXE) kick11_A1000.s
+$(EXE) : kick31340.A1000.s
+	$(ASMBIN) -o $(EXE) kick31340.A1000.s
 	fc $(EXE) kick11_A1000_ref.rom	
-	$(ASMEXE) -DREAL_EXE -o kick11_A1000_hunk kick11_A1000.s
+	$(ASMEXE) -DREAL_EXE -o kick11_A1000_hunk kick31340.A1000.s
 #$(ASMEXE) -DWA -o $(EXE) object.s
 
 

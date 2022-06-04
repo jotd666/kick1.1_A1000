@@ -6326,7 +6326,7 @@ lb_fc40e6:
 	LEA	0(A2),A1		;0fc40ee: 43ea0000
 	MOVEQ	#0,D0			;0fc40f2: 7000
 	MOVEQ	#0,D1			;0fc40f4: 7200
-	JSR	-444(A6)		;0fc40f6: 4eaefe44 (UNKNOWN)
+	JSR	_LVOOpenDevice(A6)		;0fc40f6: 4eaefe44 (UNKNOWN)
 	TST.L	D0			;0fc40fa: 4a80
 	BEQ.S	lb_fc4118		;0fc40fc: 671a
 	MOVEM.L	D7/A5-A6,-(A7)		;0fc40fe: 48e70106
@@ -63384,16 +63384,16 @@ lb_fea75c:
 	BEQ.W	lb_fea82c		;0fea786: 670000a4
 	BRA.W	lb_fea7da		;0fea78a: 6000004e
 lb_fea78e:
-	BSET	#1,38(A3)		;0fea78e: 08eb00010026
+	BSET	#1,38(A3)		;0fea78e: 08eb00010026 dsk_disk_inserted
 	BNE.W	lb_fea7b4		;0fea794: 6600001e
-	ADDQ.L	#1,274(A3)		;0fea798: 52ab0112
+	ADDQ.L	#1,274(A3)		;0fea798: 52ab0112  dsk_change_count
 	MOVEQ	#6,D0			;0fea79c: 7006
 	BSR.W	lb_feaff0		;0fea79e: 61000850
 	MOVEQ	#0,D0			;0fea7a2: 7000
 	BSR.W	lb_feb07a		;0fea7a4: 610008d4
 	BSR.W	lb_fea832		;0fea7a8: 61000088
 	BSR.W	lb_feb9dc		;0fea7ac: 6100122e
-	MOVE.B	39(A3),(A2)		;0fea7b0: 14ab0027
+	MOVE.B	39(A3),(A2)		;0fea7b0: 14ab0027  dsk_motor_status
 lb_fea7b4:
 	BCHG	#1,39(A3)		;0fea7b4: 086b00010027
 	MOVE.B	39(A3),D0		;0fea7ba: 102b0027
@@ -64170,6 +64170,7 @@ lb_feb072:
 lb_feb074:
 	MOVEM.L	(A7)+,D2-D3		;0feb074: 4cdf000c
 	RTS				;0feb078: 4e75
+	; trd_motor
 lb_feb07a:
 	MOVE.L	D2,-(A7)		;0feb07a: 2f02
 	TST.L	D0			;0feb07c: 4a80
@@ -64364,6 +64365,7 @@ lb_feb2de:
 	BEQ.S	lb_feb2de		;0feb302: 67da
 	RTS				;0feb304: 4e75
 	DC.W	$0000			;0feb306
+	; trd_readwrite
 lb_feb308:
 	MOVEM.L	A2-A4,-(A7)		;0feb308: 48e70038
 	MOVEA.L	24(A1),A3		;0feb30c: 26690018
@@ -64632,7 +64634,7 @@ lb_feb646:
 	MOVEA.L	24(A2),A3		;0feb64c: 266a0018
 	BTST	#1,38(A3)		;0feb650: 082b00010026
 	BNE.S	lb_feb63c		;0feb656: 66e4
-	MOVEQ	#1,D0			;0feb658: 7001
+	MOVEQ	#1,D0			;0feb658: 7001    trd_protstatus
 	BSR.W	lb_feb07a		;0feb65a: 6100fa1e
 	BSR.W	lb_feb9dc		;0feb65e: 6100037c
 	MOVE.B	39(A3),CIAB_PRB		;0feb662: 13eb002700bfd100
