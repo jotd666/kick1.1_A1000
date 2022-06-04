@@ -302,15 +302,19 @@ lb_fc01a0:
 	LEA	EXT_0000.W,A0		;0fc01aa: 41f80000
 	LEA	EXT_0035,A1		;0fc01ae: 43f900080000
 	LEA	lb_fc01bc(PC),A5		;0fc01b4: 4bfa0006
-	BRA.W	lb_fc04de		;0fc01b8: 60000324
+	BRA.W	detect_chipmem		;0fc01b8: 60000324
 lb_fc01bc:
+	; < D0: chipmem top
 	CMPI.L	#$00020000,D0		;0fc01bc: 0c8000020000
 	BCS.S	lb_fc01da		;0fc01c2: 6516
 	MOVEA.L	D0,A3			;0fc01c4: 2640
+	; bug here, clearing 4 times too much memory
+	; kick 1.2 has LSR.L	#2,D0 @0fc0606 for this
 	MOVEQ	#0,D2			;0fc01c6: 7400
 	SUBQ.L	#1,D0			;0fc01c8: 5380
 	MOVE.L	D0,D1			;0fc01ca: 2200
 	SWAP	D1			;0fc01cc: 4841
+	; clear chipmem
 lb_fc01ce:
 	MOVE.L	D2,(A0)+		;0fc01ce: 20c2
 	DBF	D0,lb_fc01ce		;0fc01d0: 51c8fffc
@@ -499,13 +503,13 @@ lb_fc0422:
 	BSR.W	lb_fc156a		;0fc0452: 61001116
 	BRA.S	lb_fc0474		;0fc0456: 601c
 lb_fc0458:
-	dc.l	lb_fc0000
-	dc.l	lb_1000000
-	dc.l	lb_fc0000
-	dc.l	lb_1000000
-	dc.l	$f00000
-	dc.l	$f80000
-	dc.l	-1
+	dc.l	lb_fc0000	;0fc0458
+	dc.l	lb_1000000	;0fc045c
+	dc.l	lb_fc0000	;0fc0460
+	dc.l	lb_1000000	;0fc0464
+	dc.l	$f00000	;0fc0468
+	dc.l	$f80000	;0fc046c
+	dc.l	$ffffffff	;0fc0470
 lb_fc0474:
 	BCLR	#1,CIAA_PRA		;0fc0474: 08b9000100bfe001
 	MOVE.L	46(A6),D0		;0fc047c: 202e002e
@@ -547,7 +551,7 @@ lb_fc04d6:
 	MOVEA.L	A1,A7			;0fc04d6: 2e49
 	MOVE.L	A0,ILLEG_OPC.W		;0fc04d8: 21c80010
 	RTS				;0fc04dc: 4e75
-lb_fc04de:
+detect_chipmem:
 	MOVEQ	#0,D1			;0fc04de: 7200
 	MOVE.L	D1,(A0)			;0fc04e0: 2081
 	MOVEA.L	A0,A2			;0fc04e2: 2448
@@ -2228,7 +2232,7 @@ lb_fc1690:
 	LSL.L	#3,D0			;0fc16a0: e788
 	ADDI.L	#$00000010,D0		;0fc16a2: 068000000010
 	MOVE.L	#$00010000,D1		;0fc16a8: 223c00010000
-	JSR	-198(A6)		;0fc16ae: 4eaeff3a (UNKNOWN)
+	JSR	_LVOAllocMem(A6)		;0fc16ae: 4eaeff3a (UNKNOWN)
 	TST.L	D0			;0fc16b2: 4a80
 	BEQ.S	lb_fc1714		;0fc16b4: 675e
 	MOVEA.L	D0,A3			;0fc16b6: 2640
@@ -2240,7 +2244,7 @@ lb_fc16c4:
 	MOVE.L	4(A2),D0		;0fc16c8: 202a0004
 	MOVE.L	D0,4(A3)		;0fc16cc: 27400004
 	BEQ.S	lb_fc16da		;0fc16d0: 6708
-	JSR	-198(A6)		;0fc16d2: 4eaeff3a (UNKNOWN)
+	JSR	_LVOAllocMem(A6)		;0fc16d2: 4eaeff3a (UNKNOWN)
 	TST.L	D0			;0fc16d6: 4a80
 	BEQ.S	lb_fc16fc		;0fc16d8: 6722
 lb_fc16da:
@@ -4748,6 +4752,7 @@ lb_fc2fa6:
 	DC.W	$6365			;0fc2fb0
 	DC.W	$0000			;0fc2fb2
 IDSTRING2:
+lb_fc2fb4:
 	DC.W	$6175			;0fc2fb4
 	DC.W	$6469			;0fc2fb6
 	BLE.S	lb_fc2fd8+2		;0fc2fb8: 6f20
@@ -4765,26 +4770,29 @@ lb_fc2fce:
 	DC.L	lb_fc3016		;0fc2fd4: 00fc3016
 lb_fc2fd8:
 	DC.L	lb_fc2fe0		;0fc2fd8: 00fc2fe0
-	DC.L	lb_fc3006+4		;0fc2fdc: 00fc300a
+	DC.L	lb_fc3008		;0fc2fdc: 00fc300a
 lb_fc2fe0:
-	ASR.B	#8,D0			;0fc2fe0: e000
-	DC.W	$0008			;0fc2fe2
-	BTST	D1,D0			;0fc2fe4: 0300
-	AND.B	D0,D0			;0fc2fe6: c000
-	DC.W	$000a			;0fc2fe8
-	DC.W	$00fc			;0fc2fea
-	MOVE.L	-(A6),0(A7,A6.W)	;0fc2fec: 2fa6e000
-	DC.W	$000e			;0fc2ff0
-	DC.W	$0600			;0fc2ff2
-	ADD.B	D0,D0			;0fc2ff4: d000
-	ORI.B	#$1f,(A4)		;0fc2ff6: 0014001f
-	ADD.B	D0,D0			;0fc2ffa: d000
-	ORI.B	#$09,(A6)		;0fc2ffc: 00160009
-	AND.B	D0,D0			;0fc3000: c000
-	ORI.B	#$fc,(A0)+		;0fc3002: 001800fc
-lb_fc3006:
-	MOVE.L	0(A4,D0.W),-25(A7,D4.L)	;0fc3006: 2fb4000048e7
-	OR.L	D0,D0			;0fc300c: 8080
+	dc.w	$e000	;0fc2fe0
+	dc.w	$8	;0fc2fe2
+	dc.w	$300	;0fc2fe4
+	dc.w	$c000	;0fc2fe6
+	dc.w	$a	;0fc2fe8
+	dc.l	lb_fc2fa6	;0fc2fea
+	dc.w	$e000	;0fc2fee
+	dc.w	$e	;0fc2ff0
+	dc.w	$600	;0fc2ff2
+	dc.w	$d000	;0fc2ff4
+	dc.w	$14	;0fc2ff6
+	dc.w	$1f	;0fc2ff8
+	dc.w	$d000	;0fc2ffa
+	dc.w	$16	;0fc2ffc
+	dc.w	$9	;0fc2ffe
+	dc.w	$c000	;0fc3000
+	dc.w	$18	;0fc3002
+	dc.l	lb_fc2fb4	;0fc3004
+	dc.w	0
+lb_fc3008:
+	movem.l d0/a0,-(a7)		;0fc300a: 48e78080
 	BSR.W	lb_fc33a4		;0fc300e: 61000394
 	ADDQ.L	#8,A7			;0fc3012: 508f
 	RTS				;0fc3014: 4e75
@@ -8062,6 +8070,7 @@ ROMTAG5:
 	DC.L	IDSTRING5		;0fc5596: 00fc55ac
 	DC.L	lb_fc55c8			;0fc559a: 00fc55c8
 CLISTLIBNAME:
+lb_fc559e:
 	BLS.S	lb_fc560c		;0fc559e: 636c
 	DC.W	$6973			;0fc55a0
 	MOVEQ	#46,D2			;0fc55a2: 742e
@@ -8104,39 +8113,53 @@ lb_fc55f6:
 	MOVE.L	A6,38(A0)		;0fc55f8: 214e0026
 	RTS				;0fc55fc: 4e75
 lb_fc55fe:
-	ASR.B	#8,D0			;0fc55fe: e000
-	DC.W	$0008			;0fc5600
-	BTST	D4,D0			;0fc5602: 0900
-	AND.B	D0,D0			;0fc5604: c000
-	DC.W	$000a			;0fc5606
-	DC.W	$00fc			;0fc5608
-	SUBQ.L	#2,(A6)+		;0fc560a: 559e
+	dc.w	$e000	;0fc55fe
+	dc.w	$8	;0fc5600
+	dc.w	$900	;0fc5602
+	dc.w	$c000	;0fc5604
+	dc.w	$a	;0fc5606
+	dc.l	lb_fc559e	;0fc5608
 lb_fc560c:
-	ASR.B	#8,D0			;0fc560c: e000
-	DC.W	$000e			;0fc560e
-	DC.W	$0600			;0fc5610
-	ADD.B	D0,D0			;0fc5612: d000
-	ORI.B	#$1f,(A4)		;0fc5614: 0014001f
-	ADD.B	D0,D0			;0fc5618: d000
+	dc.w	$e000	;0fc560c
+	dc.w	$e	;0fc560e
+	dc.w	$600	;0fc5610
+	dc.w	$d000	;0fc5612
+	dc.w	$14	;0fc5614
+	dc.w	$1f	;0fc5616
+	dc.w	$d000	;0fc5618
 lb_fc561a:
-	ORI.B	#$0c,(A6)		;0fc561a: 0016000c
-	DC.W	$0000			;0fc561e
+	dc.w	$16	;0fc561a
+	dc.w	$c	;0fc561c
+	dc.w	$0	;0fc561e
 lb_fc5620:
-	DC.W	$ffff			;0fc5620
-	ORI.W	#$0086,EXT_0008.W	;0fc5622: 007800860038
-	DC.W	$0076			;0fc5628
-	BSET	D0,EXT_0018.W		;0fc562a: 01f80220
-	ANDI.W	#$009c,SR		;0fc562e: 027c009c
-	ANDI.L	#$050c00ba,1404(A0)	;0fc5632: 02a8050c00ba057c
-	MOVEP	1518(A6),D0		;0fc563a: 010e05ee
-	BCHG	D0,1554(A6)		;0fc563e: 016e0612
-	BCLR	D0,(A6)+		;0fc5642: 019e
-	DC.W	$0636			;0fc5644
-	MOVEP.L	D0,708(A6)		;0fc5646: 01ce02c4
-	BTST	D1,(A0)			;0fc564a: 0310
-	BCHG	D1,(A0)			;0fc564c: 0350
-	BCHG	D1,1158(A0)		;0fc564e: 03680486
-	SUBI.L	#$04e2ffff,(A0)		;0fc5652: 049004e2ffff
+	dc.w	$ffff	;0fc5620
+	dc.w	$78	;0fc5622
+	dc.w	$86	;0fc5624
+	dc.w	$38	;0fc5626
+	dc.w	$76	;0fc5628
+	dc.w	$1f8	;0fc562a
+	dc.w	$220	;0fc562c
+	dc.w	$27c	;0fc562e
+	dc.w	$9c	;0fc5630
+	dc.w	$2a8	;0fc5632
+	dc.w	$50c	;0fc5634
+	dc.w	$ba	;0fc5636
+	dc.w	$57c	;0fc5638
+	dc.w	$10e	;0fc563a
+	dc.w	$5ee	;0fc563c
+	dc.w	$16e	;0fc563e
+	dc.w	$612	;0fc5640
+	dc.w	$19e	;0fc5642
+	dc.w	$636	;0fc5644
+	dc.w	$1ce	;0fc5646
+	dc.w	$2c4	;0fc5648
+	dc.w	$310	;0fc564a
+	dc.w	$350	;0fc564c
+	dc.w	$368	;0fc564e
+	dc.w	$486	;0fc5650
+	dc.w	$490	;0fc5652
+	dc.w	$4e2	;0fc5654
+	dc.w	$ffff	;0fc5656
 	TST.W	32(A6)			;0fc5658: 4a6e0020
 	BNE.S	lb_fc568e		;0fc565c: 6630
 	MOVE.L	34(A6),-(A7)		;0fc565e: 2f2e0022
@@ -8809,6 +8832,7 @@ ROMTAG6:
 	DC.L	IDSTRING6		;0fc5c96: 00fc5cac
 	DC.L	lb_fc5cc8			;0fc5c9a: 00fc5cc8
 DISKRESNAME:
+lb_fc5c9e:
 	DC.W	$6469			;0fc5c9e
 	DC.W	$736b			;0fc5ca0
 	DC.W	$2e72			;0fc5ca2
@@ -8926,32 +8950,35 @@ lb_fc5e16:
 	NOT.B	D3			;0fc5e24: 4603
 	RTS				;0fc5e26: 4e75
 lb_fc5e28:
-	DC.W	$6369			;0fc5e28
-	BSR.S	lb_fc5e8e		;0fc5e2a: 6162
-	DC.W	$2e72			;0fc5e2c
-	DC.W	$6573			;0fc5e2e
-	DC.W	$6f75			;0fc5e30
-	MOVEQ	#99,D1			;0fc5e32: 7263
+	dc.w	$6369	;0fc5e28
+	dc.w	$6162	;0fc5e2a
+	dc.w	$2e72	;0fc5e2c
+	dc.w	$6573	;0fc5e2e
+	dc.w	$6f75	;0fc5e30
+	dc.w	$7263	;0fc5e32
 lb_fc5e34:
-	BCS.W	lb_fc3e34+2		;0fc5e34: 6500e000
-	DC.W	$0008			;0fc5e38
-	DC.W	$0800			;0fc5e3a
-	AND.B	D0,D0			;0fc5e3c: c000
-	DC.W	$000a			;0fc5e3e
-	DC.W	$00fc			;0fc5e40
-	ADDQ.L	#6,(A6)+		;0fc5e42: 5c9e
-	ASR.B	#8,D0			;0fc5e44: e000
-	DC.W	$000e			;0fc5e46
-	DC.W	$0600			;0fc5e48
-	ADD.B	D0,D0			;0fc5e4a: d000
-	ORI.B	#$1f,(A4)		;0fc5e4c: 0014001f
-	ADD.B	D0,D0			;0fc5e50: d000
-	ORI.B	#$09,(A6)		;0fc5e52: 00160009
-	AND.B	D0,D0			;0fc5e56: c000
-	DC.W	$0022			;0fc5e58
-	DC.W	$ffff			;0fc5e5a
-	DC.W	$ffff			;0fc5e5c
-	ORI.B	#$00,D0			;0fc5e5e: 00000000
+	dc.w	$6500	;0fc5e34
+	dc.w	$e000	;0fc5e36
+	dc.w	$8	;0fc5e38
+	dc.w	$800	;0fc5e3a
+	dc.w	$c000	;0fc5e3c
+	dc.w	$a	;0fc5e3e
+	dc.l	lb_fc5c9e	;0fc5e40
+	dc.w	$e000	;0fc5e44
+	dc.w	$e	;0fc5e46
+	dc.w	$600	;0fc5e48
+	dc.w	$d000	;0fc5e4a
+	dc.w	$14	;0fc5e4c
+	dc.w	$1f	;0fc5e4e
+	dc.w	$d000	;0fc5e50
+	dc.w	$16	;0fc5e52
+	dc.w	$9	;0fc5e54
+	dc.w	$c000	;0fc5e56
+	dc.w	$22	;0fc5e58
+	dc.w	$ffff	;0fc5e5a
+	dc.w	$ffff	;0fc5e5c
+	dc.w	$0	;0fc5e5e
+	dc.w	$0	;0fc5e60
 lb_fc5e62:
 	MOVEA.L	ABSEXECBASE.W,A0	;0fc5e62: 20780004
 	MOVE.W	#$4000,INTENA		;0fc5e66: 33fc400000dff09a
@@ -56551,6 +56578,7 @@ ROMTAG11:
 	DC.L	IDSTRING11		;0fe5f76: 00fe5f8c
 	DC.L	lb_fe5fa8			;0fe5f7a: 00fe5fa8
 MISCRESNAME:
+lb_fe5f7e:
 	DC.W	$6d69			;0fe5f7e
 	DC.W	$7363			;0fe5f80
 	DC.W	$2e72			;0fe5f82
@@ -56594,22 +56622,24 @@ lb_fe5ff0:
 	MOVEM.L	(A7)+,A2/A6		;0fe5ff0: 4cdf4400
 	RTS				;0fe5ff4: 4e75
 lb_fe5ff6:
-	ASR.B	#8,D0			;0fe5ff6: e000
-	DC.W	$0008			;0fe5ff8
-	DC.W	$0800			;0fe5ffa
-	AND.B	D0,D0			;0fe5ffc: c000
-	DC.W	$000a			;0fe5ffe
-	DC.W	$00fe			;0fe6000
-	DC.W	$5f7e			;0fe6002
-	ASR.B	#8,D0			;0fe6004: e000
-	DC.W	$000e			;0fe6006
-	DC.W	$0600			;0fe6008
-	ADD.B	D0,D0			;0fe600a: d000
-	ORI.B	#$1f,(A4)		;0fe600c: 0014001f
-	ADD.B	D0,D0			;0fe6010: d000
+	dc.w	$e000	;0fe5ff6
+	dc.w	$8	;0fe5ff8
+	dc.w	$800	;0fe5ffa
+	dc.w	$c000	;0fe5ffc
+	dc.w	$a	;0fe5ffe
+	dc.l	lb_fe5f7e	;0fe6000
+	dc.w	$e000	;0fe6004
+	dc.w	$e	;0fe6006
+	dc.w	$600	;0fe6008
+	dc.w	$d000	;0fe600a
+	dc.w	$14	;0fe600c
+	dc.w	$1f	;0fe600e
+	dc.w	$d000	;0fe6010
 lb_fe6012:
-	ORI.B	#$0a,(A6)		;0fe6012: 0016000a
-	ORI.B	#$00,D0			;0fe6016: 00000000
+	dc.w	$16	;0fe6012
+	dc.w	$a	;0fe6014
+	dc.w	$0	;0fe6016
+	dc.w	$0	;0fe6018
 lb_fe601a:
 	MOVEA.L	ABSEXECBASE,A0		;0fe601a: 207900000004
 	LSL.L	#2,D0			;0fe6020: e588
@@ -56691,16 +56721,16 @@ lb_fe60de:
 	MOVE.L	A6,34(A0)		;0fe60e0: 214e0022
 	RTS				;0fe60e4: 4e75
 lb_fe60e6:
-	ASR.B	#8,D0			;0fe60e6: e000
-	DC.W	$0008			;0fe60e8
-	DC.W	$0800			;0fe60ea
-	AND.B	D0,D0			;0fe60ec: c000
-	DC.W	$000a			;0fe60ee
-	DC.W	$00fe			;0fe60f0
-	BRA.S	lb_fe607e		;0fe60f2: 608a
-	ASR.B	#8,D0			;0fe60f4: e000
-	DC.W	$000e			;0fe60f6
-	ADDI.B	#$00,D0			;0fe60f8: 06000000
+	dc.w	$e000	;0fe60e6
+	dc.w	$8	;0fe60e8
+	dc.w	$800	;0fe60ea
+	dc.w	$c000	;0fe60ec
+	dc.w	$a	;0fe60ee
+	dc.l	POTGORESNAME	;0fe60f0
+	dc.w	$e000	;0fe60f4
+	dc.w	$e	;0fe60f6
+	dc.w	$600	;0fe60f8
+	dc.w	$0	;0fe60fa
 lb_fe60fc:
 	DC.W	$ffff			;0fe60fc
 	DC.W	$000a			;0fe60fe
@@ -60788,39 +60818,39 @@ lb_fe8b96:
 	MOVEM.L	(A7)+,D2-D3/A2-A4	;0fe8b96: 4cdf1c0c
 	RTS				;0fe8b9a: 4e75
 lb_fe8b9c:
-	MOVEQ	#-1,D0			;0fe8b9c: 70ff
-	CLR.L	20(A3)			;0fe8b9e: 42ab0014
-	MOVE.B	D0,31(A3)		;0fe8ba2: 1740001f
-	BRA.S	lb_fe8b96		;0fe8ba6: 60ee
+	dc.w	$70ff	;0fe8b9c
+	dc.w	$42ab	;0fe8b9e
+	dc.w	$14	;0fe8ba0
+	dc.w	$1740	;0fe8ba2
+	dc.w	$1f	;0fe8ba4
+	dc.w	$60ee	;0fe8ba6
 lb_fe8ba8:
-	BVS.S	lb_fe8c18		;0fe8ba8: 696e
-	MOVEQ	#117,D2			;0fe8baa: 7475
-	BVS.S	lb_fe8c22		;0fe8bac: 6974
-	DC.W	$696f			;0fe8bae
-	BGT.S	lb_fe8bde+2		;0fe8bb0: 6e2e
-	DC.W	$6c69			;0fe8bb2
-	BHI.S	lb_fe8c28		;0fe8bb4: 6272
-	BSR.S	lb_fe8c28+2		;0fe8bb6: 6172
-	DC.W	$7900			;0fe8bb8
+	dc.w	$696e	;0fe8ba8
+	dc.w	$7475	;0fe8baa
+	dc.w	$6974	;0fe8bac
+	dc.w	$696f	;0fe8bae
+	dc.w	$6e2e	;0fe8bb0
+	dc.w	$6c69	;0fe8bb2
+	dc.w	$6272	;0fe8bb4
+	dc.w	$6172	;0fe8bb6
+	dc.w	$7900	;0fe8bb8
 lb_fe8bba:
-	AND.B	D0,D0			;0fe8bba: c000
-	DC.W	$000a			;0fe8bbc
-	DC.W	$00fe			;0fe8bbe
-	BVC.S	lb_fe8b48+2		;0fe8bc0: 6888
-	ASR.B	#8,D0			;0fe8bc2: e000
-	DC.W	$0008			;0fe8bc4
-	DC.W	$0400			;0fe8bc6
-	AND.B	D0,D0			;0fe8bc8: c000
-	DC.W	$000a			;0fe8bca
-	DC.W	$00fe			;0fe8bcc
-	BVC.S	lb_fe8b58		;0fe8bce: 6888
-	ASR.B	#8,D0			;0fe8bd0: e000
-	DC.W	$0020			;0fe8bd2
-	BTST	D2,D0			;0fe8bd4: 0500
-	ASR.B	#8,D0			;0fe8bd6: e000
-	BCHG	D1,-(A7)		;0fe8bd8: 0367
-	DC.W	$ff00			;0fe8bda
-	DC.W	$0000			;0fe8bdc
+	dc.w	$c000	;0fe8bba
+	dc.w	$a	;0fe8bbc
+	dc.l	lb_fe6888	;0fe8bbe
+	dc.w	$e000	;0fe8bc2
+	dc.w	$8	;0fe8bc4
+	dc.w	$400	;0fe8bc6
+	dc.w	$c000	;0fe8bc8
+	dc.w	$a	;0fe8bca
+	dc.l	lb_fe6888	;0fe8bcc
+	dc.w	$e000	;0fe8bd0
+	dc.w	$20	;0fe8bd2
+	dc.w	$500	;0fe8bd4
+	dc.w	$e000	;0fe8bd6
+	dc.w	$367	;0fe8bd8
+	dc.w	$ff00	;0fe8bda
+	dc.w	$0	;0fe8bdc
 lb_fe8bde:
 	MOVEM.L	A2-A3,-(A7)		;0fe8bde: 48e70030
 	MOVEA.L	A1,A3			;0fe8be2: 2649
@@ -69787,12 +69817,15 @@ lb_fef04c:
 	DC.W	$ffff			;0fef0c8
 	DC.W	$ffff			;0fef0ca
 lb_fef0cc:
-	ORI.B	#$00,D0			;0fef0cc: 00000000
-	ORI.B	#$10,-(A0)		;0fef0d0: 00200010
-	ORI.B	#$fe,D2			;0fef0d4: 000200fe
-	DC.W	$f04c			;0fef0d8
-	BTST	D1,D0			;0fef0da: 0300
-	ORI.B	#$00,D0			;0fef0dc: 00000000
+	dc.w	$0	;0fef0cc
+	dc.w	$0	;0fef0ce
+	dc.w	$20	;0fef0d0
+	dc.w	$10	;0fef0d2
+	dc.w	$2	;0fef0d4
+	dc.l	lb_fef04c	;0fef0d6
+	dc.w	$300	;0fef0da
+	dc.w	$0	;0fef0dc
+	dc.w	$0	;0fef0de
 lb_fef0e0:
 	MOVEA.L	4(A7),A0		;0fef0e0: 206f0004
 	MOVEQ	#1,D0			;0fef0e4: 7001
@@ -78028,19 +78061,19 @@ lb_ff4a78:
 	DC.L	IDSTRING21		;0ff4a8c: 00ff4a94
 	DC.L	ENDSKIP21		;0ff4a90: 00ff4aae
 IDSTRING21:
-	DC.W	$646f			;0ff4a94
-	DC.W	$7320			;0ff4a96
-	DC.W	$3331			;0ff4a98
-	DC.W	$2e34			;0ff4a9a
-	MOVE.W	-(A0),-(A3)		;0ff4a9c: 3720
-	DC.W	$2832			;0ff4a9e
-	MOVE.W	-(A0),-(A1)		;0ff4aa0: 3320
-	MOVE.L	USP,A7			;0ff4aa2: 4e6f
-	MOVEQ	#32,D3			;0ff4aa4: 7620
-	DC.W	$3139			;0ff4aa6
-	DC.W	$3835			;0ff4aa8
-	MOVE.L	A5,-(A4)		;0ff4aaa: 290d
-	DC.W	$0a00			;0ff4aac
+	dc.w	$646f	;0ff4a94
+	dc.w	$7320	;0ff4a96
+	dc.w	$3331	;0ff4a98
+	dc.w	$2e34	;0ff4a9a
+	dc.w	$3720	;0ff4a9c
+	dc.w	$2832	;0ff4a9e
+	dc.w	$3320	;0ff4aa0
+	dc.w	$4e6f	;0ff4aa2
+	dc.w	$7620	;0ff4aa4
+	dc.w	$3139	;0ff4aa6
+	dc.w	$3835	;0ff4aa8
+	dc.w	$290d	;0ff4aaa
+	dc.w	$a00	;0ff4aac
 ENDSKIP21:
 	MOVEA.L	ABSEXECBASE.W,A6	;0ff4aae: 2c780004
 	MOVE.L	#$00000158,D0		;0ff4ab2: 203c00000158

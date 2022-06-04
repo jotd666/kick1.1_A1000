@@ -47,7 +47,7 @@ def decode(input_file,binary_file):
             possible_reloc_values = collections.defaultdict(list)
             for offset in range(0,len(data)-4,2):
                 value = struct.unpack_from(">I",data,offset)[0]
-                if (0xFC0000 < value < 0xFFFFF0) and (value & 0xFF):
+                if (0xFC0000 <= value < 0xFFFFF0) and (value & 0xFF):
                     possible_reloc_values[value].append(offset)
                 else:
                     value *= 4
@@ -67,6 +67,19 @@ def decode(input_file,binary_file):
             if nb_missing:
                 for mo in sorted(missed_relocs-fake_relocs):
                     print("0x{:x} (offsets 0{})".format(mo,",".join("{:x}".format(x+0xFC0000) for x in possible_reloc_values[mo])))
+            else:
+                # could have missed offsets
+                possible_reloc_filtered_values = {k:v for k,v in possible_reloc_values.items() if k not in fake_relocs}
+
+                possible_reloc_offsets = set(itertools.chain.from_iterable(possible_reloc_filtered_values.values()))
+
+                offset_diff = possible_reloc_offsets.difference(set(reloc_offsets))
+                if offset_diff:
+                    print("All reloc values found but some offsets are missing")
+                    for o in sorted(offset_diff):
+                        print("{:x}".format(o+0xFC0000))
+                    nb_missing = 0  #len(offset_diff)
+
             print("Possible reloc offsets: {}, reloc_offsets: {}, missed_relocs: {}".format(len(possible_reloc_values),
             len(reloc_values),nb_missing))
 
@@ -81,7 +94,9 @@ def decode(input_file,binary_file):
             if not nb_missing:
                 rtb_data = [0xde,0xad,0xc0,0xde,0,0,0]  # wrong checksum
                 previous = 0
-                for offset in sorted(itertools.chain.from_iterable(possible_reloc_values.values())):
+
+
+                for offset in sorted(reloc_offsets):
                     delta = offset-previous
                     # encode
                     if delta < 0x100:
@@ -97,17 +112,26 @@ def decode(input_file,binary_file):
                         raise Exception("Distance too long {:x}, prev {:x}".format(offset,previous))
 
                     previous = offset
-                rtb_data.extend([0]*4)
+                # end: problem if offset is odd, we need to put a 0 longword
                 if len(rtb_data)%2:
-                    rtb_data.append(0)
+                    # check if previous reloc was byte or word
+                    if rtb_data[-3]:
+                        # it was byte, just insert 3 zeros
+                        rtb_data[-1:-1] = [0]*3
+                    else:
+                        # it was word, we'll support it if needed
+                        raise Exception("??? last reloc is word, unsupported")
+
+                rtb_data.extend([0]*4)
+
                 rtb_data.extend([0xff]*4)
                 for offset in sorted(itertools.chain.from_iterable(possible_reloc_values_bcpl.values())):
                     rtb_data.extend(struct.pack(">I",offset))
                 rtb_data.extend([0]*8)
 
-            print("saving .RTB file, {} bytes".format(len(rtb_data)))
-            with open(binary_file+".RTB","wb") as f:
-                f.write(bytearray(rtb_data))
+                print("saving .RTB file, {} bytes".format(len(rtb_data)))
+                with open(binary_file+".RTB","wb") as f:
+                    f.write(bytearray(rtb_data))
 
 decode(r"../kick11_A1000_hunk",r"../kick31340.A1000")
 

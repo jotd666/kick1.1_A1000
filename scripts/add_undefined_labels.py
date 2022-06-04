@@ -1,6 +1,6 @@
 import ira_asm_tools,subprocess,re,os
 
-asmname = "../kick11_A1000.s"
+asmname = "../kick31340.A1000.s"
 ud = re.compile("undefined symbol <lb_(\w+)>")
 build = "vasmm68k_mot -I.. -no-opt -nosym -maxerrors=0 -nosym -Fbin -o wtf".split()+[asmname]
 build = "cmd /c make -f Makefile_windows.mak".split()
