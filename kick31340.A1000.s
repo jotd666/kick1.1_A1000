@@ -63385,7 +63385,6 @@ lb_fea70a:
 lb_fea72a:
 	LEA	48(A7),A7		;0fea72a: 4fef0030
 	RTS				;0fea72e: 4e75
-	; trd_task
 lb_fea730:
 	BSR.W	lb_fea75c		;0fea730: 6100002a
 	LEA	114(A3),A1		;0fea734: 43eb0072
@@ -63402,6 +63401,7 @@ lb_fea74e:
 	JSR	-462(A6)		;0fea754: 4eaefe32 (UNKNOWN)
 	MOVEA.L	(A7)+,A6		;0fea758: 2c5f
 	RTS				;0fea75a: 4e75
+	; trd_task
 lb_fea75c:
 	MOVEM.L	D2/A2,-(A7)		;0fea75c: 48e72020
 	BSR.W	lb_feb9dc		;0fea760: 6100127a
