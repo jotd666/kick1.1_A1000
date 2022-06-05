@@ -63385,6 +63385,7 @@ lb_fea70a:
 lb_fea72a:
 	LEA	48(A7),A7		;0fea72a: 4fef0030
 	RTS				;0fea72e: 4e75
+	; trd_task
 lb_fea730:
 	BSR.W	lb_fea75c		;0fea730: 6100002a
 	LEA	114(A3),A1		;0fea734: 43eb0072
@@ -63421,7 +63422,7 @@ lb_fea78e:
 	BSR.W	lb_feaff0		;0fea79e: 61000850
 	MOVEQ	#0,D0			;0fea7a2: 7000
 	BSR.W	lb_feb07a		;0fea7a4: 610008d4
-	BSR.W	lb_fea832		;0fea7a8: 61000088
+	BSR.W	trd_task_cause		;0fea7a8: 61000088
 	BSR.W	lb_feb9dc		;0fea7ac: 6100122e
 	MOVE.B	39(A3),(A2)		;0fea7b0: 14ab0027  dsk_motor_status
 lb_fea7b4:
@@ -63455,17 +63456,17 @@ lb_fea7da:
 lb_fea81c:
 	MOVE.W	#$ffff,50(A3)		;0fea81c: 377cffff0032
 	BCLR	#1,38(A3)		;0fea822: 08ab00010026
-	BSR.W	lb_fea832		;0fea828: 61000008
+	BSR.W	trd_task_cause		;0fea828: 61000008
 lb_fea82c:
 	MOVEM.L	(A7)+,D2/A2		;0fea82c: 4cdf0404
 	RTS				;0fea830: 4e75
-lb_fea832:
+trd_task_cause:
 	MOVE.L	278(A3),D0		;0fea832: 202b0116
 	BEQ.S	lb_fea846		;0fea836: 670e
 	MOVEA.L	D0,A1			;0fea838: 2240
 	MOVE.L	A6,-(A7)		;0fea83a: 2f0e
 	MOVEA.L	52(A6),A6		;0fea83c: 2c6e0034
-	JSR	-180(A6)		;0fea840: 4eaeff4c (UNKNOWN)
+	JSR	(_LVOCause,A6)	;0fea840: 4eaeff4c exec.library (off=-180)
 	MOVEA.L	(A7)+,A6		;0fea844: 2c5f
 lb_fea846:
 	RTS				;0fea846: 4e75

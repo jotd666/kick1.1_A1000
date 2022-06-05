@@ -35,10 +35,13 @@ def decode(input_file,binary_file):
             hunk_type_str = hunk_dict.get(hunk_type,str(hunk_type))
             print("Hunk #{}, offset ${:06x} type ${:04x} ({}), size ${:x}".format(i,f.tell()-8,hunk_type,hunk_type_str,hunk_size))
             i+=1
-            data = f.read(hunk_size)
-            if hunk_type_str == "reloc32":
-                reloc_offsets = [struct.unpack_from(">I",data,i)[0] for i in range(4,len(data),4)]
 
+            if hunk_type_str == "reloc32":
+                data = f.read(hunk_size+4)
+                reloc_offsets = [struct.unpack_from(">I",data,i)[0] for i in range(4,len(data),4)]
+                break
+            else:
+                data = f.read(hunk_size)
         with open(binary_file,"rb") as f:
             data = f.read()
             reloc_values = {struct.unpack_from(">I",data,i)[0] for i in reloc_offsets}
@@ -95,8 +98,8 @@ def decode(input_file,binary_file):
                 rtb_data = [0xde,0xad,0xc0,0xde,0,0,0]  # wrong checksum
                 previous = 0
 
-
-                for offset in sorted(reloc_offsets):
+                reloc_offsets= sorted(reloc_offsets)
+                for offset in reloc_offsets:
                     delta = offset-previous
                     # encode
                     if delta < 0x100:
@@ -132,6 +135,10 @@ def decode(input_file,binary_file):
                 print("saving .RTB file, {} bytes".format(len(rtb_data)))
                 with open(binary_file+".RTB","wb") as f:
                     f.write(bytearray(rtb_data))
+                print("saving .RTB.TXT file")
+                with open(binary_file+".RTB.TXT","w") as f:
+                    for s in reloc_offsets:
+                        f.write("\tdc.l\t${:x}\n".format(s))
 
 decode(r"../kick11_A1000_hunk",r"../kick31340.A1000")
 
